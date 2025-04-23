@@ -15,13 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalStepsEl = document.getElementById('total-steps');
     const actorIndicator = document.getElementById('actor-indicator');
 
-    // Variables pour stocker les logs et l'état de la visualisation
     let logs = [];
     let currentStep = 0;
-    let processingMode = ''; // 'encrypt' ou 'decrypt'
-    let intermediateMessage = ''; // Message intermédiaire après chiffrement par Alice
+    let processingMode = '';
+    let intermediateMessage = '';
 
-    // Fonction pour activer/désactiver les boutons de navigation
     function updateNavButtons() {
         prevBtn.disabled = currentStep <= 0;
         nextBtn.disabled = currentStep >= logs.length - 1;
@@ -31,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
         totalStepsEl.textContent = logs.length - 1;
     }
 
-    // Fonction pour mettre à jour l'indicateur d'acteur
     function updateActorIndicator(actor) {
         if (actor === 'Alice') {
             actorIndicator.className = 'actor-indicator alice-indicator';
@@ -45,25 +42,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Fonction pour dessiner une carte
-    function renderCard(card) {
-        const cardElement = document.createElement('div');
-        cardElement.className = 'card';
-        
-        if (card === 'JOKER_B') {
-            cardElement.className += ' joker-b';
-            cardElement.textContent = 'JB';
-        } else if (card === 'JOKER_R') {
-            cardElement.className += ' joker-r';
-            cardElement.textContent = 'JR';
-        } else {
-            cardElement.textContent = card;
-        }
-        
-        return cardElement;
-    }
+function renderCard(card) {
+    const img = document.createElement('img');
+    img.src = `../assets/cards/${card}.png`;
+    img.alt = card; 
+    return img;
+}
 
-    // Fonction pour afficher l'état du paquet
     function renderDeck(deck) {
         deckDisplay.innerHTML = '';
         if (!deck) return;
@@ -73,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Fonction pour afficher la progression des lettres
     function renderLetterProgress(message, currentIndex) {
         letterProgress.innerHTML = '';
         if (!message) return;
@@ -88,8 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
             letterProgress.appendChild(letterBox);
         });
     }
-
-    // Fonction pour formater le texte avec mise en évidence de l'acteur
     function formatActorText(text, actor) {
         return text.replace(
             new RegExp(`(${actor})`, 'g'), 
@@ -97,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    // Fonction pour afficher les détails de l'étape actuelle
     function renderStepInfo(log) {
         if (!log) {
             stepInfo.innerHTML = '<p>Aucune opération en cours. Veuillez chiffrer ou déchiffrer un message.</p>';
@@ -107,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const actor = log.instance === 'Alice' ? 'Alice' : 'Bob';
         let html = `<h4>${formatActorText(log.action, actor)}</h4>`;
         
-        // Affichage différent selon le type d'action
         switch (log.action) {
             case 'START_ENCRYPTION':
                 html += formatActorText(`<p>Alice commence à chiffrer le message: "${log.data.originalMessage}"</p>`, 'Alice');
@@ -205,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += `<p>Message original: "${log.data.originalMessage}"</p>`;
                 html += `<p>Message chiffré: "${log.data.encryptedMessage}"</p>`;
                 
-                // Stocker le message intermédiaire pour Bob
                 intermediateMessage = log.data.encryptedMessage;
                 break;
                 
@@ -214,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += `<p>Message chiffré: "${log.data.encryptedMessage}"</p>`;
                 html += `<p>Message déchiffré: "${log.data.decryptedMessage}"</p>`;
                 
-                // Vérifier si le message déchiffré correspond au message original
                 const originalMessage = messageInput.value.trim().toUpperCase();
                 if (processingMode === 'both' && log.data.decryptedMessage === originalMessage) {
                     html += `<p class="success">✅ Le déchiffrement est correct! Le message déchiffré correspond au message original.</p>`;
@@ -230,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         stepInfo.innerHTML = html;
     }
 
-    // Événement pour le bouton "Chiffrer"
     encryptBtn.addEventListener('click', () => {
         const message = messageInput.value.trim().toUpperCase();
         
@@ -239,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Réinitialiser localStorage
         localStorage.removeItem('solitaire_logs');
         
         processingMode = 'encrypt';
@@ -250,10 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         resultDisplay.textContent = `Message chiffré par Alice: ${encryptedMessage}`;
         
-        // Mettre à jour le message intermédiaire
         intermediateMessage = encryptedMessage;
         
-        // Récupérer les logs
         logs = alice.getLogs();
         currentStep = 0;
         
@@ -264,12 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateNavButtons();
     });
 
-    // Événement pour le bouton "Déchiffrer"
     decryptBtn.addEventListener('click', () => {
         let message = messageInput.value.trim().toUpperCase();
         
         if (!message) {
-            // Si aucun message n'est saisi mais qu'il y a un message intermédiaire, utiliser ce dernier
             if (intermediateMessage) {
                 message = intermediateMessage;
             } else {
@@ -278,7 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Réinitialiser localStorage
         localStorage.removeItem('solitaire_logs');
         
         processingMode = 'decrypt';
@@ -289,7 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         resultDisplay.textContent = `Message déchiffré par Bob: ${decryptedMessage}`;
         
-        // Récupérer les logs
         logs = bob.getLogs();
         currentStep = 0;
         
@@ -300,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateNavButtons();
     });
 
-    // Événement pour le bouton "Précédent"
     prevBtn.addEventListener('click', () => {
         if (currentStep > 0) {
             currentStep--;
@@ -309,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Événement pour le bouton "Suivant"
     nextBtn.addEventListener('click', () => {
         if (currentStep < logs.length - 1) {
             currentStep++;
@@ -318,14 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Événement pour le bouton "Réinitialiser"
     resetBtn.addEventListener('click', () => {
         currentStep = 0;
         renderStepInfo(logs[0]);
         updateNavButtons();
     });
 
-    // Vérifier s'il y a des logs stockés dans localStorage au démarrage
     try {
         const storedLogs = localStorage.getItem('solitaire_logs');
         if (storedLogs) {
@@ -334,8 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentStep = 0;
                 renderStepInfo(logs[0]);
                 updateNavButtons();
-                
-                // Déterminer l'acteur basé sur les logs existants
                 const actor = logs[0].instance;
                 updateActorIndicator(actor);
             }

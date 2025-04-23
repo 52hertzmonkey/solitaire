@@ -1,4 +1,3 @@
-// Talker.js
 export default class Talker {
     deckValue = [
         "AC", "2C", "3C", "4C", "5C", "6C",
@@ -39,7 +38,6 @@ export default class Talker {
         
         this.logs.push(logEntry);
         
-        // Si nous sommes dans un navigateur, stockons les logs dans localStorage
         if (typeof window !== 'undefined' && window.localStorage) {
             const existingLogs = JSON.parse(localStorage.getItem('solitaire_logs') || '[]');
             existingLogs.push(logEntry);
@@ -204,11 +202,9 @@ export default class Talker {
     }
 
     drawDeck() {
-        // Étape 1: Déplacer le Joker B d'une position vers le bas
         let jokerBIndex = this.intermediateDeck.indexOf("JOKER_B");
         const oldJokerBPosition = jokerBIndex;
         
-        // Si le Joker B est la dernière carte, on le place après la première
         if (jokerBIndex === this.intermediateDeck.length - 1) {
             this.intermediateDeck.splice(jokerBIndex, 1);
             this.intermediateDeck.splice(1, 0, "JOKER_B");
@@ -226,7 +222,6 @@ export default class Talker {
             deckAfter: [...this.intermediateDeck]
         });
 
-        // Étape 2: Déplacer le Joker R de deux positions vers le bas
         let jokerRIndex = this.intermediateDeck.indexOf("JOKER_R");
         const oldJokerRPosition = jokerRIndex;
         
@@ -249,7 +244,6 @@ export default class Talker {
             deckAfter: [...this.intermediateDeck]
         });
 
-        // Étape 3: Triple coupe autour des Jokers
         const firstJokerIndex = Math.min(this.intermediateDeck.indexOf("JOKER_B"), this.intermediateDeck.indexOf("JOKER_R"));
         const secondJokerIndex = Math.max(this.intermediateDeck.indexOf("JOKER_B"), this.intermediateDeck.indexOf("JOKER_R"));
 
@@ -267,7 +261,6 @@ export default class Talker {
             deckAfter: [...this.intermediateDeck]
         });
 
-        // Étape 4: Couper selon la valeur de la dernière carte
         const lastCard = this.intermediateDeck[this.intermediateDeck.length - 1];
         let cutValue;
 
@@ -277,7 +270,6 @@ export default class Talker {
             cutValue = this.deckValue.indexOf(lastCard) + 1;
         }
 
-        // Limite cutValue à la longueur du deck - 1 pour éviter de déplacer la dernière carte
         cutValue = Math.min(cutValue, this.intermediateDeck.length - 1);
 
         const topPart = this.intermediateDeck.slice(0, cutValue);
@@ -300,7 +292,6 @@ export default class Talker {
     }
 
     getKeyStreamValue() {
-        // Regarder la première carte
         const firstCard = this.intermediateDeck[0];
         let lookupValue;
 
@@ -310,10 +301,8 @@ export default class Talker {
             lookupValue = this.deckValue.indexOf(firstCard) + 1;
         }
 
-        // Obtenir la carte à la position indiquée par la valeur de la première carte
         const outputCard = this.intermediateDeck[lookupValue];
         
-        // Si c'est un joker, on retourne undefined pour recommencer
         if (outputCard === "JOKER_B" || outputCard === "JOKER_R") {
             this.log("OUTPUT_CARD_IS_JOKER", {
                 outputCard: outputCard,
@@ -323,10 +312,8 @@ export default class Talker {
             return undefined;
         }
 
-        // Sinon, on convertit la carte en valeur numérique
         const cardValue = this.deckValue.indexOf(outputCard) + 1;
         
-        // Convertir en nombre de 1 à 26 (modulo 26 + 1)
         const keyStreamValue = ((cardValue - 1) % 26) + 1;
         
         this.log("KEY_STREAM_VALUE_CALCULATION", {
