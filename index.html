@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="../javascript/script.js" defer></script>
+    <title>Algorithme du Solitaire - Visualiseur</title>
+    <link rel="stylesheet" href="./css/style.css">
+
+</head>
+<body>
+    <h1>Algorithme du Solitaire - Visualiseur</h1>
+
+    <div class="container">
+        <div class="input-section">
+            <h2>Saisir un message</h2>
+            <input type="text" id="message-input" placeholder="Entrez votre message (lettres seulement)">
+            <div class="controls">
+                <button id="encrypt-btn">Chiffrer (Alice)</button>
+                <button id="decrypt-btn">Déchiffrer (Bob)</button>
+            </div>
+            <div class="result" id="result-display"></div>
+        </div>
+
+        <div class="visualization-section">
+            <h2>Visualisation</h2>
+            <div id="actor-indicator" class="actor-indicator"></div>
+            <div class="step-counter">Étape <span id="current-step">0</span> / <span id="total-steps">0</span></div>
+            <div class="controls">
+                <button id="prev-btn" disabled>Précédent</button>
+                <button id="next-btn" disabled>Suivant</button>
+                <button id="reset-btn" disabled>Réinitialiser</button>
+            </div>
+
+            <div class="step-info" id="step-info">
+                <p>Aucune opération en cours. Veuillez chiffrer ou déchiffrer un message.</p>
+            </div>
+
+            <h3>Message</h3>
+            <div class="letter-progress" id="letter-progress"></div>
+
+            <h3>État du paquet de cartes</h3>
+            <div class="deck-display" id="deck-display"></div>
+        </div>
+    </div>
+
+    
+</body>
+</html>

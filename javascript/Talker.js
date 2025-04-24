@@ -1,6 +1,3 @@
-//Clover Diamon Heart Spade
-
-// Talker.js
 export default class Talker {
     deckValue = [
         "AC", "2C", "3C", "4C", "5C", "6C",
@@ -24,31 +21,106 @@ export default class Talker {
 
     dictionary = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
-    constructor() {
+    constructor(instanceName = "DefaultTalker") {
         this.encryptedMessage = [];
         this.intermediateDeck = [];
+        this.instanceName = instanceName;
+        this.logs = [];
+    }
+
+    log(action, data) {
+        const logEntry = {
+            timestamp: new Date().toISOString(),
+            instance: this.instanceName,
+            action: action,
+            data: data
+        };
+        
+        this.logs.push(logEntry);
+        
+        if (typeof window !== 'undefined' && window.localStorage) {
+            const existingLogs = JSON.parse(localStorage.getItem('solitaire_logs') || '[]');
+            existingLogs.push(logEntry);
+            localStorage.setItem('solitaire_logs', JSON.stringify(existingLogs));
+        }
+        
+        return logEntry;
+    }
+    
+    getLogs() {
+        return this.logs;
     }
 
     encryptMessage(msg) {
         this.encryptedMessage = [];
-        this.intermediateDeck = [...this.initialDeck]; // Initialiser le deck une seule fois
+        this.intermediateDeck = [...this.initialDeck];
+        
+        this.log("START_ENCRYPTION", {
+            originalMessage: msg.toUpperCase(),
+            action: "encryption"
+        });
+        
+        this.log("INIT_DECK", {
+            deck: [...this.intermediateDeck]
+        });
 
-        [...msg.toUpperCase()].forEach(letter => {
+        [...msg.toUpperCase()].forEach((letter, index) => {
+            this.log("PROCESS_LETTER", {
+                letter: letter,
+                position: index,
+                remainingMessage: msg.toUpperCase().substring(index)
+            });
+
             if (!this.dictionary.includes(letter)) {
-                this.encryptedMessage.push(letter); // Caractères non alphabétiques inchangés
+                this.encryptedMessage.push(letter);
+                this.log("NON_ALPHA_CHARACTER", {
+                    letter: letter,
+                    currentEncryptedMessage: this.encryptedMessage.join('')
+                });
                 return;
             }
 
             let keyStreamValue;
+            let iteration = 0;
             while (keyStreamValue === undefined) {
+                this.log("SHUFFLING_DECK", {
+                    iteration: ++iteration,
+                    forLetter: letter,
+                    deckStateBefore: [...this.intermediateDeck]
+                });
+
                 this.drawDeck();
+
+                this.log("DECK_SHUFFLED", {
+                    iteration: iteration,
+                    forLetter: letter,
+                    deckStateAfter: [...this.intermediateDeck]
+                });
+
                 keyStreamValue = this.getKeyStreamValue();
+                this.log("KEY_STREAM_VALUE", {
+                    value: keyStreamValue,
+                    valid: keyStreamValue !== undefined
+                });
             }
 
-            // Chiffrer la lettre (addition modulo 26)
             const letterIndex = this.dictionary.indexOf(letter);
             const encryptedIndex = (letterIndex + keyStreamValue) % 26;
             this.encryptedMessage.push(this.dictionary[encryptedIndex]);
+            
+            this.log("LETTER_ENCRYPTED", {
+                original: letter,
+                originalIndex: letterIndex,
+                encrypted: this.dictionary[encryptedIndex],
+                encryptedIndex: encryptedIndex,
+                keyStreamValue: keyStreamValue,
+                currentEncryptedMessage: this.encryptedMessage.join('')
+            });
+        });
+        
+        this.log("ENCRYPTION_COMPLETE", {
+            originalMessage: msg.toUpperCase(),
+            encryptedMessage: this.encryptedMessage.join('')
         });
 
         return this.encryptedMessage.join('');
@@ -56,70 +128,139 @@ export default class Talker {
 
     decryptMessage(msg) {
         this.encryptedMessage = [];
-        this.intermediateDeck = [...this.initialDeck]; // Initialiser le deck une seule fois
+        this.intermediateDeck = [...this.initialDeck];
+        
+        this.log("START_DECRYPTION", {
+            encryptedMessage: msg.toUpperCase(),
+            action: "decryption"
+        });
+        
+        this.log("INIT_DECK", {
+            deck: [...this.intermediateDeck]
+        });
 
-        [...msg.toUpperCase()].forEach(letter => {
+        [...msg.toUpperCase()].forEach((letter, index) => {
+            this.log("PROCESS_LETTER", {
+                letter: letter,
+                position: index,
+                remainingMessage: msg.toUpperCase().substring(index)
+            });
+
             if (!this.dictionary.includes(letter)) {
-                this.encryptedMessage.push(letter); // Caractères non alphabétiques inchangés
+                this.encryptedMessage.push(letter);
+                this.log("NON_ALPHA_CHARACTER", {
+                    letter: letter,
+                    currentDecryptedMessage: this.encryptedMessage.join('')
+                });
                 return;
             }
 
             let keyStreamValue;
+            let iteration = 0;
             while (keyStreamValue === undefined) {
+                this.log("SHUFFLING_DECK", {
+                    iteration: ++iteration,
+                    forLetter: letter,
+                    deckStateBefore: [...this.intermediateDeck]
+                });
+
                 this.drawDeck();
+
+                this.log("DECK_SHUFFLED", {
+                    iteration: iteration,
+                    forLetter: letter,
+                    deckStateAfter: [...this.intermediateDeck]
+                });
+
                 keyStreamValue = this.getKeyStreamValue();
+                this.log("KEY_STREAM_VALUE", {
+                    value: keyStreamValue,
+                    valid: keyStreamValue !== undefined
+                });
             }
 
-            // Déchiffrer la lettre (soustraction modulo 26)
             const letterIndex = this.dictionary.indexOf(letter);
-            const decryptedIndex = (letterIndex - keyStreamValue + 26) % 26;
-            this.encryptedMessage.push(this.dictionary[decryptedIndex]);
+            const originalIndex = (letterIndex - keyStreamValue + 26) % 26;
+            this.encryptedMessage.push(this.dictionary[originalIndex]);
+            
+            this.log("LETTER_DECRYPTED", {
+                encrypted: letter,
+                encryptedIndex: letterIndex,
+                original: this.dictionary[originalIndex],
+                originalIndex: originalIndex,
+                keyStreamValue: keyStreamValue,
+                currentDecryptedMessage: this.encryptedMessage.join('')
+            });
+        });
+        
+        this.log("DECRYPTION_COMPLETE", {
+            encryptedMessage: msg.toUpperCase(),
+            decryptedMessage: this.encryptedMessage.join('')
         });
 
         return this.encryptedMessage.join('');
     }
 
     drawDeck() {
-        // Étape 1: Déplacer le Joker Noir d'une position vers le bas
-        const indexJokerB = this.intermediateDeck.indexOf("JOKER_B");
-        const jokerB = this.intermediateDeck.splice(indexJokerB, 1)[0];
-
-        if (indexJokerB === this.intermediateDeck.length) {
-            // Si le joker était la dernière carte, le mettre après la première
-            this.intermediateDeck.splice(1, 0, jokerB);
+        let jokerBIndex = this.intermediateDeck.indexOf("JOKER_B");
+        const oldJokerBPosition = jokerBIndex;
+        
+        if (jokerBIndex === this.intermediateDeck.length - 1) {
+            this.intermediateDeck.splice(jokerBIndex, 1);
+            this.intermediateDeck.splice(1, 0, "JOKER_B");
+            jokerBIndex = 1;
         } else {
-            this.intermediateDeck.splice(indexJokerB + 1, 0, jokerB);
+            this.swapCards(jokerBIndex, jokerBIndex + 1);
+            jokerBIndex += 1;
         }
+        
+        this.log("STEP1_MOVE_JOKER_B", {
+            jokerPosition: {
+                before: oldJokerBPosition,
+                after: jokerBIndex
+            },
+            deckAfter: [...this.intermediateDeck]
+        });
 
-        // Étape 2: Déplacer le Joker Rouge de deux positions vers le bas
-        const indexJokerR = this.intermediateDeck.indexOf("JOKER_R");
-        const jokerR = this.intermediateDeck.splice(indexJokerR, 1)[0];
-
-        if (indexJokerR === this.intermediateDeck.length) {
-            // Si le joker était la dernière carte, le mettre après la deuxième
-            this.intermediateDeck.splice(2, 0, jokerR);
-        } else if (indexJokerR === this.intermediateDeck.length - 1) {
-            // Si le joker était l'avant-dernière carte, le mettre après la première
-            this.intermediateDeck.splice(1, 0, jokerR);
-        } else {
-            this.intermediateDeck.splice(indexJokerR + 2, 0, jokerR);
+        let jokerRIndex = this.intermediateDeck.indexOf("JOKER_R");
+        const oldJokerRPosition = jokerRIndex;
+        
+        for (let i = 0; i < 2; i++) {
+            if (jokerRIndex === this.intermediateDeck.length - 1) {
+                this.intermediateDeck.splice(jokerRIndex, 1);
+                this.intermediateDeck.splice(1, 0, "JOKER_R");
+                jokerRIndex = 1;
+            } else {
+                this.swapCards(jokerRIndex, jokerRIndex + 1);
+                jokerRIndex += 1;
+            }
         }
+        
+        this.log("STEP2_MOVE_JOKER_R", {
+            jokerPosition: {
+                before: oldJokerRPosition,
+                after: jokerRIndex
+            },
+            deckAfter: [...this.intermediateDeck]
+        });
 
-        // Étape 3: Couper en trois et permuter (Double Cut)
-        let firstJokerIndex = this.intermediateDeck.indexOf("JOKER_B");
-        let secondJokerIndex = this.intermediateDeck.indexOf("JOKER_R");
-
-        if (firstJokerIndex > secondJokerIndex) {
-            [firstJokerIndex, secondJokerIndex] = [secondJokerIndex, firstJokerIndex];
-        }
+        const firstJokerIndex = Math.min(this.intermediateDeck.indexOf("JOKER_B"), this.intermediateDeck.indexOf("JOKER_R"));
+        const secondJokerIndex = Math.max(this.intermediateDeck.indexOf("JOKER_B"), this.intermediateDeck.indexOf("JOKER_R"));
 
         const firstPart = this.intermediateDeck.slice(0, firstJokerIndex);
         const middlePart = this.intermediateDeck.slice(firstJokerIndex, secondJokerIndex + 1);
         const lastPart = this.intermediateDeck.slice(secondJokerIndex + 1);
 
         this.intermediateDeck = [...lastPart, ...middlePart, ...firstPart];
+        
+        this.log("STEP3_TRIPLE_CUT", {
+            jokerPositions: {
+                first: firstJokerIndex,
+                second: secondJokerIndex
+            },
+            deckAfter: [...this.intermediateDeck]
+        });
 
-        // Étape 4: Couper selon la valeur de la dernière carte
         const lastCard = this.intermediateDeck[this.intermediateDeck.length - 1];
         let cutValue;
 
@@ -129,7 +270,6 @@ export default class Talker {
             cutValue = this.deckValue.indexOf(lastCard) + 1;
         }
 
-        // Limite cutValue à la longueur du deck - 1 pour éviter de déplacer la dernière carte
         cutValue = Math.min(cutValue, this.intermediateDeck.length - 1);
 
         const topPart = this.intermediateDeck.slice(0, cutValue);
@@ -137,10 +277,21 @@ export default class Talker {
         const lastCardAgain = this.intermediateDeck[this.intermediateDeck.length - 1];
 
         this.intermediateDeck = [...bottomPart, ...topPart, lastCardAgain];
+        
+        this.log("STEP4_COUNT_CUT", {
+            lastCard: lastCard,
+            cutValue: cutValue,
+            deckAfter: [...this.intermediateDeck]
+        });
+    }
+
+    swapCards(index1, index2) {
+        const temp = this.intermediateDeck[index1];
+        this.intermediateDeck[index1] = this.intermediateDeck[index2];
+        this.intermediateDeck[index2] = temp;
     }
 
     getKeyStreamValue() {
-        // Regarder la première carte
         const firstCard = this.intermediateDeck[0];
         let lookupValue;
 
@@ -150,18 +301,29 @@ export default class Talker {
             lookupValue = this.deckValue.indexOf(firstCard) + 1;
         }
 
-        // Obtenir la carte à la position indiquée par la valeur de la première carte
         const outputCard = this.intermediateDeck[lookupValue];
-
-        // Si c'est un joker, on retourne undefined pour recommencer
+        
         if (outputCard === "JOKER_B" || outputCard === "JOKER_R") {
+            this.log("OUTPUT_CARD_IS_JOKER", {
+                outputCard: outputCard,
+                position: lookupValue,
+                valid: false
+            });
             return undefined;
         }
 
-        // Sinon, on convertit la carte en valeur numérique
         const cardValue = this.deckValue.indexOf(outputCard) + 1;
         
-        // Convertir en nombre de 1 à 26 (modulo 26 + 1)
-        return ((cardValue - 1) % 26) + 1;
+        const keyStreamValue = ((cardValue - 1) % 26) + 1;
+        
+        this.log("KEY_STREAM_VALUE_CALCULATION", {
+            outputCard: outputCard,
+            position: lookupValue,
+            cardValue: cardValue,
+            keyStreamValue: keyStreamValue,
+            valid: true
+        });
+        
+        return keyStreamValue;
     }
 }
